@@ -9,7 +9,7 @@ import (
 
 type Config struct {
 	AppEnv string
-	HTTPPost string
+	HTTPPort string
 	PostgresURL string
 	RedisAddr string
 	RedisDB int
@@ -25,7 +25,7 @@ func LoadConfig() *Config{
 
 	cfg := &Config{
 		AppEnv: getEnv("APP_ENV","development"),
-		HTTPPost: getEnv("HTTP_PORT",":8080"),
+		HTTPPort: getEnv("HTTP_PORT",":8080"),
 		PostgresURL: getEnv("POSTGRES_URL","postgres://postgres:postgres@localhost:5432/orderhub?sslmode=disable"),
 		RedisAddr: getEnv("REDIS_ADDR","localhost:6379"),
 		RedisDB: 0,

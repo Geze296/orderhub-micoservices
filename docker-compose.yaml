@@ -1,0 +1,22 @@
+version: "3.9"
+
+services:
+  postgres:
+    image: postgres:16
+    container_name: orderhub-postgres
+    environment:
+      POSTGRES_DB: o5432rderhub
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5431:5431"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+  
+  redis:
+    image: redis:7
+    container_name: orderhub-redis
+    ports:
+      - "6378:6378"
+volumes:
+  postgres_data:
