@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	"github.com/Geze296/orderhub/api-service/internal/http/helper"
+	"github.com/Geze296/orderhub/api-service/internal/http/middleware"
 	"github.com/Geze296/orderhub/api-service/internal/service"
 )
 
@@ -89,4 +90,13 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	}
 
 	helper.WriteJson(w, result, http.StatusOK, "Login Successfully!!")
+}
+
+func (h *AuthHandler) GetMe(w http.ResponseWriter, r *http.Request) {
+	userId, ok := middleware.UserIdFromContext(r.Context())
+	if ok != true {
+		helper.WriteError(w, http.StatusUnauthorized, "token not exists")
+		return
+	}
+	helper.WriteJson(w, userId, http.StatusOK, "correct token")
 }
