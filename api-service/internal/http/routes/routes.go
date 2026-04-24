@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/Geze296/orderhub/api-service/internal/config"
 	"github.com/Geze296/orderhub/api-service/internal/http/handler"
 	appmw "github.com/Geze296/orderhub/api-service/internal/http/middleware"
 	"github.com/go-chi/chi/v5"
@@ -15,6 +16,7 @@ type Dependancy struct {
 	Logger        *slog.Logger
 	HealthHandler *handler.HealthHandler
 	AuthHandler   *handler.AuthHandler
+	Config        *config.Config
 }
 
 func NewRouter(deps Dependancy) http.Handler {
@@ -28,8 +30,16 @@ func NewRouter(deps Dependancy) http.Handler {
 
 	r.Get("/health", deps.HealthHandler.Health)
 
-	r.Post("/register", deps.AuthHandler.Register)
-	r.Post("/login", deps.AuthHandler.Login)
+	r.Route("/api", func(r chi.Router) {
+		r.Route("/auth", func(r chi.Router) {
+			r.Post("/register", deps.AuthHandler.Register)
+			r.Post("/login", deps.AuthHandler.Login)
+		})
+		r.Group(func(r chi.Router) {
+			r.Use(appmw.AuthMiddleware(deps.Config.JWTSecret))
+			r.Get("/me", deps.AuthHandler.GetMe)
+		})
+	})
 
 	return r
 }

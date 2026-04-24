@@ -50,6 +50,7 @@ func New(ctx context.Context) (*App, error) {
 		Logger:        log,
 		HealthHandler: healthHandler,
 		AuthHandler:   authHandler,
+		Config:        cfg,
 	})
 
 	server := &http.Server{
