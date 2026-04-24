@@ -39,7 +39,7 @@ func (r *PostgresUserRepository) Create(ctx context.Context, user *domain.User) 
 
 
 func (r *PostgresUserRepository) GetByEmail(ctx context.Context, email string) (*domain.User, error) {
-	q := `SELECT id, name, email, created_at
+	q := `SELECT id, name, email, password_hash, created_at
 			FROM users
 			WHERE email = $1
 		`
@@ -48,11 +48,12 @@ func (r *PostgresUserRepository) GetByEmail(ctx context.Context, email string) (
 		&user.ID,
 		&user.Name,
 		&user.Email,
+		&user.PasswordHash,
 		&user.CreatedAt,
 	)
 
 	if err != nil {
-		return nil, fmt.Errorf("Get by id error:%w", err)
+		return nil, fmt.Errorf("Get by email error:%w", err)
 	}
 
 	return &user, nil

@@ -29,6 +29,7 @@ func NewRouter(deps Dependancy) http.Handler {
 	r.Get("/health", deps.HealthHandler.Health)
 
 	r.Post("/register", deps.AuthHandler.Register)
+	r.Post("/login", deps.AuthHandler.Login)
 
 	return r
 }

@@ -22,6 +22,7 @@ var (
 	ErrInvalidInput     = errors.New("Invalid input or miss required input")
 	ErrShortPasswordLen = errors.New("Short Password length")
 	ErrUserExists       = errors.New("User already exist")
+	ErrPasswordNotMatch = errors.New("Password Do not match")
 )
 
 func NewAuthService(users repository.UserRepository, jwtSecret string) *AuthService {
@@ -108,12 +109,12 @@ func (s *AuthService) Login(ctx context.Context, input LoginInput) (*AuthResult,
 
 	user, err := s.users.GetByEmail(ctx, input.Email)
 	if err != nil {
-		return nil, fmt.Errorf("Get user by email:%w", err)
+		return nil, fmt.Errorf(err.Error())
 	}
 
 	e := auth.CheckHashedPassword(input.Password, user.PasswordHash)
 	if e != nil {
-		return nil, fmt.Errorf("Password is not match:%w", e)
+		return nil, ErrPasswordNotMatch
 	}
 
 	token, err := auth.GenerateToken(s.jwtSecret, int(user.ID), s.ttl)
