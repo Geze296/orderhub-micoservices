@@ -13,7 +13,7 @@ import (
 )
 
 type AuthService struct {
-	users     repository.UserRepository
+	repo     repository.UserRepository
 	jwtSecret string
 	ttl       time.Duration
 }
@@ -25,9 +25,9 @@ var (
 	ErrPasswordNotMatch = errors.New("Password Do not match")
 )
 
-func NewAuthService(users repository.UserRepository, jwtSecret string) *AuthService {
+func NewAuthService(repo repository.UserRepository, jwtSecret string) *AuthService {
 	return &AuthService{
-		users:     users,
+		repo:     repo,
 		jwtSecret: jwtSecret,
 		ttl:       time.Hour,
 	}
@@ -62,7 +62,7 @@ func (s *AuthService) Register(ctx context.Context, input RegisterInput) (*AuthR
 		return nil, ErrShortPasswordLen
 	}
 
-	existing, err := s.users.GetByEmail(ctx, input.Email)
+	existing, err := s.repo.GetByEmail(ctx, input.Email)
 	if err == nil && existing != nil {
 		return nil, ErrUserExists
 	}
@@ -79,7 +79,7 @@ func (s *AuthService) Register(ctx context.Context, input RegisterInput) (*AuthR
 		CreatedAt:    time.Now(),
 	}
 
-	e := s.users.Create(ctx, newUser)
+	e := s.repo.Create(ctx, newUser)
 
 	if e != nil {
 		return nil, err
@@ -107,7 +107,7 @@ func (s *AuthService) Login(ctx context.Context, input LoginInput) (*AuthResult,
 		return nil, ErrInvalidInput
 	}
 
-	user, err := s.users.GetByEmail(ctx, input.Email)
+	user, err := s.repo.GetByEmail(ctx, input.Email)
 	if err != nil {
 		return nil, fmt.Errorf(err.Error())
 	}

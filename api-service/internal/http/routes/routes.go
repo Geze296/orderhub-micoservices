@@ -13,10 +13,11 @@ import (
 )
 
 type Dependancy struct {
-	Logger        *slog.Logger
-	HealthHandler *handler.HealthHandler
-	AuthHandler   *handler.AuthHandler
-	Config        *config.Config
+	Logger         *slog.Logger
+	Config         *config.Config
+	HealthHandler  *handler.HealthHandler
+	AuthHandler    *handler.AuthHandler
+	ProductHandler *handler.ProductHandler
 }
 
 func NewRouter(deps Dependancy) http.Handler {
@@ -38,6 +39,9 @@ func NewRouter(deps Dependancy) http.Handler {
 		r.Group(func(r chi.Router) {
 			r.Use(appmw.AuthMiddleware(deps.Config.JWTSecret))
 			r.Get("/me", deps.AuthHandler.GetMe)
+		})
+		r.Route("/product", func(r chi.Router) {
+			r.Post("/create", deps.ProductHandler.CreateProduct)
 		})
 	})
 

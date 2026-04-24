@@ -44,13 +44,17 @@ func New(ctx context.Context) (*App, error) {
 
 	healthHandler := handler.NewHealthHandler()
 	authRepository := repository.NewUserRepo(postgres)
+	productRepository := repository.NewProductRepository(postgres)
+	productService := service.NewProductService(productRepository)
+	productHandler := handler.NewProductHandler(productService)
 	authService := service.NewAuthService(authRepository, cfg.JWTSecret)
 	authHandler := handler.NewAuthHandler(authService)
 	router := routes.NewRouter(routes.Dependancy{
 		Logger:        log,
+		Config:        cfg,
 		HealthHandler: healthHandler,
 		AuthHandler:   authHandler,
-		Config:        cfg,
+		ProductHandler: productHandler,
 	})
 
 	server := &http.Server{
