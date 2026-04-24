@@ -13,6 +13,8 @@ import (
 	"github.com/Geze296/orderhub/api-service/internal/http/handler"
 	"github.com/Geze296/orderhub/api-service/internal/http/routes"
 	"github.com/Geze296/orderhub/api-service/internal/logger"
+	"github.com/Geze296/orderhub/api-service/internal/repository"
+	"github.com/Geze296/orderhub/api-service/internal/service"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/redis/go-redis/v9"
 )
@@ -41,9 +43,13 @@ func New(ctx context.Context) (*App, error) {
 	}
 
 	healthHandler := handler.NewHealthHandler()
+	authRepository := repository.NewUserRepo(postgres)
+	authService := service.NewAuthService(authRepository, cfg.JWTSecret)
+	authHandler := handler.NewAuthHandler(authService)
 	router := routes.NewRouter(routes.Dependancy{
 		Logger:        log,
 		HealthHandler: healthHandler,
+		AuthHandler:   authHandler,
 	})
 
 	server := &http.Server{

@@ -1,0 +1,2 @@
+-- Active: 1774007783901@@127.0.0.1@5432@orderhub
+DROP TABLE IF EXISTS users;

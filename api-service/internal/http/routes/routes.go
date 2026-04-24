@@ -1,7 +1,6 @@
 package routes
 
 import (
-	"encoding/json"
 	"log/slog"
 	"net/http"
 	"time"
@@ -15,6 +14,7 @@ import (
 type Dependancy struct {
 	Logger        *slog.Logger
 	HealthHandler *handler.HealthHandler
+	AuthHandler   *handler.AuthHandler
 }
 
 func NewRouter(deps Dependancy) http.Handler {
@@ -26,13 +26,9 @@ func NewRouter(deps Dependancy) http.Handler {
 	r.Use(chimiddleware.Timeout(30 * time.Second))
 	r.Use(appmw.RequestLogger(deps.Logger))
 
-	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
-		json.NewEncoder(w).Encode(map[string]string{
-			"status":  "Ok",
-			"message": "Success",
-		})
-	})
 	r.Get("/health", deps.HealthHandler.Health)
+
+	r.Post("/register", deps.AuthHandler.Register)
 
 	return r
 }
