@@ -6,16 +6,21 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/Geze296/orderhub/api-service/internal/cache"
 	"github.com/Geze296/orderhub/api-service/internal/domain"
 	"github.com/Geze296/orderhub/api-service/internal/repository"
 )
 
 type ProductService struct {
-	repo repository.ProductRepositoryInterface
+	repo  repository.ProductRepositoryInterface
+	cache cache.ProductCache
 }
 
-func NewProductService(repo repository.ProductRepositoryInterface) *ProductService {
-	return &ProductService{repo: repo}
+func NewProductService(repo repository.ProductRepositoryInterface, cache cache.ProductCache) *ProductService {
+	return &ProductService{
+		repo:  repo,
+		cache: cache,
+	}
 }
 
 var (
@@ -56,20 +61,34 @@ func (s *ProductService) Create(ctx context.Context, input CreateProductRequest)
 	if err != nil {
 		return err
 	}
+
+	_ = s.cache.DeleteProductList(ctx)
 	return nil
 }
 
 func (s *ProductService) List(ctx context.Context) ([]domain.Product, error) {
-	
+	cached, found, err := s.cache.GetProductsList(ctx)
+	if err == nil && found {
+		return cached, nil
+	}
+
 	products, err := s.repo.List(ctx)
 	if err != nil {
 		return nil, err
 	}
 
+	_ = s.cache.SetProductList(ctx, products)
+
 	return products, nil
 }
 
 func (s *ProductService) GetById(ctx context.Context, id int) (*domain.Product, error) {
+
+	cached, found, err := s.cache.GetProduct(ctx, int64(id))
+	if err == nil && found {
+		return cached, nil
+	}
+
 	if id == 0 {
 		return nil, fmt.Errorf("id is required")
 	}
@@ -80,6 +99,7 @@ func (s *ProductService) GetById(ctx context.Context, id int) (*domain.Product, 
 		return nil, err
 	}
 
+	_ = s.cache.SetProduct(ctx, product)
 	return product, nil
 }
 
@@ -102,6 +122,10 @@ func (s *ProductService) Update(ctx context.Context, input UpdateProductRequest)
 	if err != nil {
 		return nil, err
 	}
+
+	_ = s.cache.DeleteProduct(ctx, int(input.ID))
+	_ = s.cache.DeleteProductList(ctx)
+
 	return updateProduct, err
 }
 
@@ -110,6 +134,9 @@ func (s *ProductService) Delete(ctx context.Context, id int) error {
 	if err := s.repo.Delete(ctx, id); err != nil {
 		return err
 	}
+
+	_ = s.cache.DeleteProduct(ctx, id)
+	_ = s.cache.DeleteProductList(ctx)
 
 	return nil
 }

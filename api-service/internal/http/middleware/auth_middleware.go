@@ -39,7 +39,6 @@ func AuthMiddleware(jwtSecret string) func(http.Handler) http.Handler {
 				return 
 			}
 
-			fmt.Println("Claims user id: ", claims.UserId)
 			ctx := context.WithValue(r.Context(), UserIdKey, int64(claims.UserId))
 			h.ServeHTTP(w, r.WithContext(ctx))
 		})
