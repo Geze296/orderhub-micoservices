@@ -2,16 +2,21 @@ package repository
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/Geze296/orderhub/api-service/internal/domain"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
+var ErrProductNotFound = errors.New("Product Not Found")
+
 type ProductRepositoryInterface interface {
 	Create(ctx context.Context, product *domain.Product) error
 	List(ctx context.Context) ([]domain.Product, error)
 	GetById(ctx context.Context, id int) (*domain.Product, error)
+	Update(ctx context.Context, product *domain.Product) (*domain.Product, error)
+	Delete(ctx context.Context, id int) error
 }
 
 type ProductRepo struct {
@@ -38,7 +43,7 @@ func (r *ProductRepo) Create(ctx context.Context, product *domain.Product) error
 }
 
 func (r *ProductRepo) List(ctx context.Context) ([]domain.Product, error) {
-	q := `SELECT id, name, description, product_cents, stock, created_at, updated_at FROM products
+	q := `SELECT id, name, description, price_cents, stock, created_at, updated_at FROM products
 			ORDER BY id DESC
 		`
 
@@ -72,7 +77,7 @@ func (r *ProductRepo) List(ctx context.Context) ([]domain.Product, error) {
 }
 
 func (r *ProductRepo) GetById(ctx context.Context, id int) (*domain.Product, error) {
-	q := `SELECT id, name, description, product_cents, stock, created_at, updated_at FROM products
+	q := `SELECT id, name, description, price_cents, stock, created_at, updated_at FROM products
 			WHERE id = $1`
 
 	var product domain.Product
@@ -92,7 +97,9 @@ func (r *ProductRepo) GetById(ctx context.Context, id int) (*domain.Product, err
 	return &product, nil
 }
 
-func (r *ProductRepo) Update(ctx context.Context, product domain.Product) (*domain.Product, error) {
+func (r *ProductRepo) Update(ctx context.Context, product *domain.Product) (*domain.Product, error) {
+	fmt.Println(product)
+
 	q := `UPDATE products SET
 			name = $2, 
 			description = $3,
@@ -102,16 +109,30 @@ func (r *ProductRepo) Update(ctx context.Context, product domain.Product) (*doma
 		WHERE id = $1 
 		`
 
-	err := r.db.QueryRow(ctx, q, product.ID, product.Name, product.Description, product.PriceCents, product.Stock).Scan(
-		&product.Name,
-		&product.Description,
-		&product.PriceCents,
-		&product.Stock,
-	)
-
+	tag, err := r.db.Exec(ctx, q, product.ID, product.Name, product.Description, product.PriceCents, product.Stock)
 	if err != nil {
 		return nil, fmt.Errorf("Error :%w", err)
 	}
 
-	return &product, nil
+	if tag.RowsAffected() == 0 {
+		return nil, fmt.Errorf("There is no row affected")
+	}
+	
+	return product, nil
+}
+
+
+func (r *ProductRepo) Delete(ctx context.Context, id int) error {
+	q := `DELETE FROM products WHERE id = $1`
+
+	tag, err := r.db.Exec(ctx, q, id);
+
+	if err != nil {
+		return fmt.Errorf("Error: %w", err)
+	}
+	if tag.RowsAffected() == 0 {
+		return ErrProductNotFound
+	}
+
+	return nil
 }

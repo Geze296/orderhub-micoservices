@@ -41,7 +41,12 @@ func NewRouter(deps Dependancy) http.Handler {
 			r.Get("/me", deps.AuthHandler.GetMe)
 		})
 		r.Route("/product", func(r chi.Router) {
+			r.Use(appmw.AuthMiddleware(deps.Config.JWTSecret))
 			r.Post("/create", deps.ProductHandler.CreateProduct)
+			r.Get("/", deps.ProductHandler.GetAllProducts)
+			r.Get("/{id}", deps.ProductHandler.GetById)
+			r.Put("/{id}", deps.ProductHandler.UpdateProduct)
+			r.Delete("/{id}", deps.ProductHandler.DeleteProduct)
 		})
 	})
 
