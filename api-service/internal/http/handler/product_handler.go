@@ -21,7 +21,7 @@ func NewProductHandler(productService *service.ProductService) *ProductHandler {
 type ProductCreateRequest struct {
 	Name        string `json:"name"`
 	Description string `json:"description"`
-	PriceCents  int64  `json:"price_cents"`
+	PriceCents  float64  `json:"price_cents"`
 	Stock       int32  `json:"stock"`
 }
 
