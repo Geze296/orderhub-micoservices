@@ -102,9 +102,10 @@ func (s *OrderService) Create(ctx context.Context, input CreateOrderInput) (*dom
 	if err := s.orderRepo.Create(ctx, tx, order); err != nil {
 		return nil, err
 	}
+	fmt.Printf("Repo Order ID: %v", order.ID)
 
 	for i := range order.Items {
-		order.Items[i].ID = order.ID
+		order.Items[i].OrderID = order.ID
 		if err := s.orderRepo.CreateItem(ctx, tx, &order.Items[i]); err != nil {
 			return nil, err
 		}
@@ -115,4 +116,21 @@ func (s *OrderService) Create(ctx context.Context, input CreateOrderInput) (*dom
 	}
 
 	return order, nil
+}
+
+
+func (s *OrderService) ListByUserID(ctx context.Context, userID int64) ([]domain.Order, error) {
+	orders, err := s.orderRepo.ListByUserID(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+	return orders, nil
+}
+
+func (s *OrderService) ListByUserANDOrderID(ctx context.Context, orderID, userID int64) (*domain.Order, error) {
+	orders, err := s.orderRepo.GetByOrderIDAndUserID(ctx, orderID, userID)
+	if err != nil {
+		return nil, err
+	}
+	return orders, err
 }
