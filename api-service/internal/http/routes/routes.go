@@ -31,28 +31,37 @@ func NewRouter(deps Dependancy) http.Handler {
 	r.Use(appmw.RequestLogger(deps.Logger))
 
 	r.Get("/health", deps.HealthHandler.Health)
-	
+
 	r.Route("/api", func(r chi.Router) {
+		
+		// auth
 		r.Route("/auth", func(r chi.Router) {
 			r.Post("/register", deps.AuthHandler.Register)
 			r.Post("/login", deps.AuthHandler.Login)
 		})
+
 		r.Group(func(r chi.Router) {
 			r.Use(appmw.AuthMiddleware(deps.Config.JWTSecret))
 			r.Get("/me", deps.AuthHandler.GetMe)
-			r.Post("/order", deps.OrderHandler.CreateOrder)
-			r.Get("/order", deps.OrderHandler.ListUserOrders)
-			r.Get("/order/{id}", deps.OrderHandler.ListByUserANDOrderID)
+
+			// product
+			r.Route("/product", func(r chi.Router) {
+				r.Post("/create", deps.ProductHandler.CreateProduct)
+				r.Get("/", deps.ProductHandler.GetAllProducts)
+				r.Get("/{id}", deps.ProductHandler.GetById)
+				r.Put("/{id}", deps.ProductHandler.UpdateProduct)
+				r.Delete("/{id}", deps.ProductHandler.DeleteProduct)
+			})
+
+			// order
+			r.Route("/order", func(r chi.Router) {
+				r.Post("/", deps.OrderHandler.CreateOrder)
+				r.Get("/", deps.OrderHandler.ListUserOrders)
+				r.Get("/{id}", deps.OrderHandler.ListByUserANDOrderID)
+
+			})
 		})
-		r.Route("/product", func(r chi.Router) {
-			r.Use(appmw.AuthMiddleware(deps.Config.JWTSecret))
-			r.Post("/create", deps.ProductHandler.CreateProduct)
-			r.Get("/", deps.ProductHandler.GetAllProducts)
-			r.Get("/{id}", deps.ProductHandler.GetById)
-			r.Put("/{id}", deps.ProductHandler.UpdateProduct)
-			r.Delete("/{id}", deps.ProductHandler.DeleteProduct)
-		})
-	
+
 	})
 
 	return r

@@ -10,6 +10,7 @@ import (
 	"github.com/Geze296/orderhub/api-service/internal/cache"
 	"github.com/Geze296/orderhub/api-service/internal/config"
 	"github.com/Geze296/orderhub/api-service/internal/db"
+	"github.com/Geze296/orderhub/api-service/internal/event"
 	"github.com/Geze296/orderhub/api-service/internal/http/handler"
 	"github.com/Geze296/orderhub/api-service/internal/http/routes"
 	"github.com/Geze296/orderhub/api-service/internal/logger"
@@ -51,8 +52,10 @@ func New(ctx context.Context) (*App, error) {
 	authService := service.NewAuthService(authRepository, cfg.JWTSecret)
 	authHandler := handler.NewAuthHandler(authService)
 
+	orderPublisher := event.NewRedisPublisher(redisDB)
+
 	orderRepository := repository.NewOrderRepository(postgres)
-	orderService := service.NewOrderService(postgres, orderRepository, productRepository)
+	orderService := service.NewOrderService(postgres, orderRepository, productRepository, productCache, orderPublisher, log)
 	orderHandler := handler.NewOrderHandler(orderService)
 
 	router := routes.NewRouter(routes.Dependancy{

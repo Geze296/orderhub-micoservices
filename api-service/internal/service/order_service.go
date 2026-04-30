@@ -4,8 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 
+	"github.com/Geze296/orderhub/api-service/internal/cache"
 	"github.com/Geze296/orderhub/api-service/internal/domain"
+	"github.com/Geze296/orderhub/api-service/internal/event"
 	"github.com/Geze296/orderhub/api-service/internal/repository"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -16,16 +19,22 @@ var (
 )
 
 type OrderService struct {
-	db          *pgxpool.Pool
-	orderRepo   *repository.OrderRepository
-	productRepo *repository.ProductRepo
+	db           *pgxpool.Pool
+	orderRepo    *repository.OrderRepository
+	productRepo  *repository.ProductRepo
+	productCache *cache.ProductCache
+	publisher    *event.Publisher
+	logger       *slog.Logger
 }
 
-func NewOrderService(db *pgxpool.Pool, orderRepo *repository.OrderRepository, productRepo *repository.ProductRepo) *OrderService {
+func NewOrderService(db *pgxpool.Pool, orderRepo *repository.OrderRepository, productRepo *repository.ProductRepo, productCache *cache.ProductCache, publisher *event.Publisher, logger *slog.Logger) *OrderService {
 	return &OrderService{
-		db: db,
-		orderRepo: orderRepo,
-		productRepo: productRepo,
+		db:           db,
+		orderRepo:    orderRepo,
+		productRepo:  productRepo,
+		productCache: productCache,
+		publisher:    publisher,
+		logger:       logger,
 	}
 }
 
@@ -95,7 +104,7 @@ func (s *OrderService) Create(ctx context.Context, input CreateOrderInput) (*dom
 			UnitPriceCents: product.PriceCents,
 		}
 		order.Items = append(order.Items, orderItem)
-		order.TotalAmountCents += orderItem.UnitPriceCents
+		order.TotalAmountCents += product.PriceCents + float64(orderItem.Quantity)
 		affectedProductsIDs = append(affectedProductsIDs, product.ID)
 	}
 
@@ -115,9 +124,28 @@ func (s *OrderService) Create(ctx context.Context, input CreateOrderInput) (*dom
 		return nil, fmt.Errorf("commit tx error : %w", err)
 	}
 
+	_ = s.productCache.DeleteProductList(ctx)
+	for _, productID := range affectedProductsIDs {
+		s.productCache.DeleteProduct(ctx, int(productID))
+	}
+
+	orderEvent := event.OrderCreatedEvent{
+		EventType:        event.OrderCreatedChannel,
+		OrderID:          order.ID,
+		UserID:           order.UserID,
+		TotalAmountCents: order.TotalAmountCents,
+		CreatedAt:        order.CreatedAt,
+	}
+
+	if err := s.publisher.PublishOrderCreated(ctx, orderEvent); err != nil {
+		s.logger.Warn("failed to publish order.created event",
+			slog.Int64("order_id", order.ID),
+			slog.Any("error", err),
+		)
+	}
+
 	return order, nil
 }
-
 
 func (s *OrderService) ListByUserID(ctx context.Context, userID int64) ([]domain.Order, error) {
 	orders, err := s.orderRepo.ListByUserID(ctx, userID)
