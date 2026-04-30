@@ -42,6 +42,7 @@ func NewRouter(deps Dependancy) http.Handler {
 			r.Get("/me", deps.AuthHandler.GetMe)
 			r.Post("/order", deps.OrderHandler.CreateOrder)
 			r.Get("/order", deps.OrderHandler.ListUserOrders)
+			r.Get("/order/{id}", deps.OrderHandler.ListByUserANDOrderID)
 		})
 		r.Route("/product", func(r chi.Router) {
 			r.Use(appmw.AuthMiddleware(deps.Config.JWTSecret))

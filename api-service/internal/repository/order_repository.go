@@ -135,7 +135,7 @@ func (r *OrderRepository) listOrderItemsByOrderID(ctx context.Context, order_id 
 func (r *OrderRepository) GetByOrderIDAndUserID(ctx context.Context, orderID, userID int64) (*domain.Order, error) {
 	qy := `SELECT id, user_id, status, total_amount_cents, created_at
 			FROM orders
-			WHERE order_id = $1 AND user_id = $2
+			WHERE id = $1 AND user_id = $2
 			ORDER BY id DESC
 		`
 	var order domain.Order
