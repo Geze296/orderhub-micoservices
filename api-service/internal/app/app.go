@@ -50,12 +50,18 @@ func New(ctx context.Context) (*App, error) {
 	productHandler := handler.NewProductHandler(productService)
 	authService := service.NewAuthService(authRepository, cfg.JWTSecret)
 	authHandler := handler.NewAuthHandler(authService)
+
+	orderRepository := repository.NewOrderRepository(postgres)
+	orderService := service.NewOrderService(postgres, orderRepository, productRepository)
+	orderHandler := handler.NewOrderHandler(orderService)
+
 	router := routes.NewRouter(routes.Dependancy{
-		Logger:        log,
-		Config:        cfg,
-		HealthHandler: healthHandler,
-		AuthHandler:   authHandler,
+		Logger:         log,
+		Config:         cfg,
+		HealthHandler:  healthHandler,
+		AuthHandler:    authHandler,
 		ProductHandler: productHandler,
+		OrderHandler:   orderHandler,
 	})
 
 	server := &http.Server{

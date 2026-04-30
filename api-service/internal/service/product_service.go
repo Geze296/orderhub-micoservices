@@ -30,7 +30,7 @@ var (
 type CreateProductRequest struct {
 	Name        string
 	Description string
-	PriceCents  int64
+	PriceCents  float64
 	Stock       int32
 }
 
@@ -38,7 +38,7 @@ type UpdateProductRequest struct {
 	ID          int64
 	Name        string
 	Description string
-	PriceCents  int64
+	PriceCents  float64
 	Stock       int32
 }
 

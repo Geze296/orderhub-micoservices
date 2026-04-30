@@ -18,6 +18,7 @@ type Dependancy struct {
 	HealthHandler  *handler.HealthHandler
 	AuthHandler    *handler.AuthHandler
 	ProductHandler *handler.ProductHandler
+	OrderHandler   *handler.OrderHandler
 }
 
 func NewRouter(deps Dependancy) http.Handler {
@@ -30,7 +31,7 @@ func NewRouter(deps Dependancy) http.Handler {
 	r.Use(appmw.RequestLogger(deps.Logger))
 
 	r.Get("/health", deps.HealthHandler.Health)
-
+	
 	r.Route("/api", func(r chi.Router) {
 		r.Route("/auth", func(r chi.Router) {
 			r.Post("/register", deps.AuthHandler.Register)
@@ -39,6 +40,9 @@ func NewRouter(deps Dependancy) http.Handler {
 		r.Group(func(r chi.Router) {
 			r.Use(appmw.AuthMiddleware(deps.Config.JWTSecret))
 			r.Get("/me", deps.AuthHandler.GetMe)
+			r.Post("/order", deps.OrderHandler.CreateOrder)
+			r.Get("/order", deps.OrderHandler.ListUserOrders)
+			r.Get("/order/{id}", deps.OrderHandler.ListByUserANDOrderID)
 		})
 		r.Route("/product", func(r chi.Router) {
 			r.Use(appmw.AuthMiddleware(deps.Config.JWTSecret))
@@ -48,6 +52,7 @@ func NewRouter(deps Dependancy) http.Handler {
 			r.Put("/{id}", deps.ProductHandler.UpdateProduct)
 			r.Delete("/{id}", deps.ProductHandler.DeleteProduct)
 		})
+	
 	})
 
 	return r
