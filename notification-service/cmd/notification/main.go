@@ -1,7 +1,7 @@
-package notification
+package main
 
 import "fmt"
 
 func main(){
-	fmt.Println("Notification server")	
+	fmt.Println("Hello: Notification server")	
 }
