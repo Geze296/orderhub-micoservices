@@ -9,14 +9,16 @@ import (
 
 type Claims struct {
 	UserId int `json:"user_id"`
+	Role string `json:"user_role"`
 	jwt.RegisteredClaims
 }
 
-func GenerateToken(secret string, userId int, ttl time.Duration) (string, error) {
+func GenerateToken(secret string, userId int, role string, ttl time.Duration) (string, error) {
 	now := time.Now()
 
 	claims := Claims{
 		UserId: userId,
+		Role: role,
 		RegisteredClaims: jwt.RegisteredClaims{
 			Subject:   fmt.Sprintf("%d", userId),
 			IssuedAt:  jwt.NewNumericDate(now),

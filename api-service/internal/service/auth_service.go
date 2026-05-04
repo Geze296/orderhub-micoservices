@@ -9,6 +9,7 @@ import (
 
 	"github.com/Geze296/orderhub/api-service/internal/auth"
 	"github.com/Geze296/orderhub/api-service/internal/domain"
+	"github.com/Geze296/orderhub/api-service/internal/http/dto"
 	"github.com/Geze296/orderhub/api-service/internal/repository"
 )
 
@@ -44,12 +45,7 @@ type LoginInput struct {
 	Password string
 }
 
-type AuthResult struct {
-	Token string       `json:"token"`
-	User  *domain.User `json:"user"`
-}
-
-func (s *AuthService) Register(ctx context.Context, input RegisterInput) (*AuthResult, error) {
+func (s *AuthService) Register(ctx context.Context, input RegisterInput) (*dto.AuthResult, error) {
 
 	input.Name = strings.TrimSpace(input.Name)
 	input.Email = strings.TrimSpace(input.Email)
@@ -85,11 +81,11 @@ func (s *AuthService) Register(ctx context.Context, input RegisterInput) (*AuthR
 		return nil, err
 	}
 
-	token, err := auth.GenerateToken(s.jwtSecret, int(newUser.ID), s.ttl)
+	token, err := auth.GenerateToken(s.jwtSecret, int(newUser.ID), newUser.Role, s.ttl)
 	if err != nil {
 		return nil, fmt.Errorf("Generate token:%w", err)
 	}
-	return &AuthResult{
+	return &dto.AuthResult{
 		Token: token,
 		User:  &domain.User{
 			ID: newUser.ID,
@@ -100,7 +96,7 @@ func (s *AuthService) Register(ctx context.Context, input RegisterInput) (*AuthR
 	}, nil
 }
 
-func (s *AuthService) Login(ctx context.Context, input LoginInput) (*AuthResult, error) {
+func (s *AuthService) Login(ctx context.Context, input LoginInput) (*dto.AuthResult, error) {
 	input.Email = strings.TrimSpace(input.Email)
 
 	if input.Email == "" || input.Password == "" {
@@ -117,12 +113,12 @@ func (s *AuthService) Login(ctx context.Context, input LoginInput) (*AuthResult,
 		return nil, ErrPasswordNotMatch
 	}
 
-	token, err := auth.GenerateToken(s.jwtSecret, int(user.ID), s.ttl)
+	token, err := auth.GenerateToken(s.jwtSecret, int(user.ID), user.Role, s.ttl)
 	if err != nil {
 		return nil, fmt.Errorf("Generate token error:%w", err)
 	}
 
-	return &AuthResult{
+	return &dto.AuthResult{
 		Token: token,
 		User:  user,
 	}, nil

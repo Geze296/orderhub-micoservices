@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/Geze296/orderhub/api-service/internal/http/dto"
 	"github.com/Geze296/orderhub/api-service/internal/http/helper"
 	"github.com/Geze296/orderhub/api-service/internal/service"
 	"github.com/go-chi/chi/v5"
@@ -18,15 +19,10 @@ func NewProductHandler(productService *service.ProductService) *ProductHandler {
 	return &ProductHandler{ProductService: productService}
 }
 
-type ProductCreateRequest struct {
-	Name        string `json:"name"`
-	Description string `json:"description"`
-	PriceCents  float64  `json:"price_cents"`
-	Stock       int32  `json:"stock"`
-}
+
 
 func (h *ProductHandler) CreateProduct(w http.ResponseWriter, r *http.Request) {
-	var req ProductCreateRequest
+	var req dto.ProductCreateRequest
 
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		helper.WriteError(w, http.StatusBadRequest, "Error data decoding")
@@ -47,7 +43,7 @@ func (h *ProductHandler) CreateProduct(w http.ResponseWriter, r *http.Request) {
 	helper.WriteJson(w, nil, http.StatusCreated, "Product Created successfully")
 }
 
-func (h *ProductHandler) GetAllProducts(w http.ResponseWriter, r *http.Request)  {
+func (h *ProductHandler) GetAllProducts(w http.ResponseWriter, r *http.Request) {
 	products, err := h.ProductService.List(r.Context())
 
 	if err != nil {
@@ -79,14 +75,12 @@ func (h *ProductHandler) UpdateProduct(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	 
-
-	if _ ,err := h.ProductService.GetById(r.Context(), id); err != nil {
+	if _, err := h.ProductService.GetById(r.Context(), id); err != nil {
 		helper.WriteError(w, http.StatusBadRequest, err.Error())
 		return
 	}
 
-	var req ProductCreateRequest
+	var req dto.ProductCreateRequest
 
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		helper.WriteError(w, http.StatusBadRequest, "Invalid input while decoding json")
@@ -122,7 +116,6 @@ func (h *ProductHandler) DeleteProduct(w http.ResponseWriter, r *http.Request) {
 
 	helper.WriteJson(w, nil, http.StatusOK, "Product deleted successfully")
 }
-
 
 func parseIntParams(r *http.Request, name string) (int, error) {
 	raw := chi.URLParam(r, name)
