@@ -14,7 +14,7 @@ import (
 )
 
 type AuthService struct {
-	repo     repository.UserRepository
+	repo      repository.UserRepository
 	jwtSecret string
 	ttl       time.Duration
 }
@@ -28,7 +28,7 @@ var (
 
 func NewAuthService(repo repository.UserRepository, jwtSecret string) *AuthService {
 	return &AuthService{
-		repo:     repo,
+		repo:      repo,
 		jwtSecret: jwtSecret,
 		ttl:       time.Hour,
 	}
@@ -37,6 +37,7 @@ func NewAuthService(repo repository.UserRepository, jwtSecret string) *AuthServi
 type RegisterInput struct {
 	Name     string
 	Email    string
+	Role     string
 	Password string
 }
 
@@ -53,6 +54,11 @@ func (s *AuthService) Register(ctx context.Context, input RegisterInput) (*dto.A
 	if input.Name == "" || input.Email == "" || input.Password == "" {
 		return nil, ErrInvalidInput
 	}
+	if input.Role != "" {
+		if input.Role != "admin" || input.Role != "customer" {
+			return nil, fmt.Errorf("Incorrect role assignement")
+		}
+	} 
 
 	if len(input.Password) < 4 {
 		return nil, ErrShortPasswordLen
@@ -75,6 +81,10 @@ func (s *AuthService) Register(ctx context.Context, input RegisterInput) (*dto.A
 		CreatedAt:    time.Now(),
 	}
 
+	if input.Role != "" {
+		newUser.Role = input.Role
+	}
+
 	e := s.repo.Create(ctx, newUser)
 
 	if e != nil {
@@ -87,10 +97,11 @@ func (s *AuthService) Register(ctx context.Context, input RegisterInput) (*dto.A
 	}
 	return &dto.AuthResult{
 		Token: token,
-		User:  &domain.User{
-			ID: newUser.ID,
-			Name: newUser.Name,
-			Email: newUser.Email,
+		User: &domain.User{
+			ID:        newUser.ID,
+			Name:      newUser.Name,
+			Email:     newUser.Email,
+			Role:      newUser.Role,
 			CreatedAt: newUser.CreatedAt,
 		},
 	}, nil
