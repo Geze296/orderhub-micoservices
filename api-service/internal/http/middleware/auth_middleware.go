@@ -2,7 +2,6 @@ package middleware
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 	"strings"
 
@@ -13,6 +12,7 @@ import (
 type contextKey string
 
 const UserIdKey contextKey = "user_id"
+const UserRoleKey contextKey = "user_role"
 
 func AuthMiddleware(jwtSecret string) func(http.Handler) http.Handler {
 	return func(h http.Handler) http.Handler {
@@ -20,26 +20,27 @@ func AuthMiddleware(jwtSecret string) func(http.Handler) http.Handler {
 			authHeader := r.Header.Get("Authorization")
 			if authHeader == "" {
 				helper.WriteError(w, http.StatusUnauthorized, "Authorization Header required")
-				return 
+				return
 			}
 
 			parts := strings.SplitN(authHeader, " ", 2)
-			if len(parts) != 2{
+			if len(parts) != 2 {
 				helper.WriteError(w, http.StatusUnauthorized, "invalid authorization header")
-				return 
+				return
 			}
 			if parts[0] != "Bearer" {
 				helper.WriteError(w, http.StatusUnauthorized, "Using wrong authorization method")
-				return 
+				return
 			}
 
 			claims, err := auth.ParseToken(jwtSecret, parts[1])
 			if err != nil {
 				helper.WriteError(w, http.StatusUnauthorized, "Invalid Token")
-				return 
+				return
 			}
 
 			ctx := context.WithValue(r.Context(), UserIdKey, int64(claims.UserId))
+			ctx = context.WithValue(ctx, UserRoleKey, claims.Role)
 			h.ServeHTTP(w, r.WithContext(ctx))
 		})
 	}
@@ -47,6 +48,10 @@ func AuthMiddleware(jwtSecret string) func(http.Handler) http.Handler {
 
 func UserIdFromContext(ctx context.Context) (int64, bool) {
 	userId, ok := ctx.Value(UserIdKey).(int64)
-	fmt.Println("user id: ",userId, "ok:", ok)
 	return userId, ok
+}
+
+func UserRoleFromContext(ctx context.Context) (string, bool) {
+	userRole, ok := ctx.Value(ctx).(string)
+	return userRole, ok
 }

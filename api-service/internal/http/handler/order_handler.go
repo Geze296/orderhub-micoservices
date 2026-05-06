@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"github.com/Geze296/orderhub/api-service/internal/http/dto"
 	"github.com/Geze296/orderhub/api-service/internal/http/helper"
 	"github.com/Geze296/orderhub/api-service/internal/http/middleware"
 	"github.com/Geze296/orderhub/api-service/internal/service"
@@ -17,15 +18,6 @@ func NewOrderHandler(orderService *service.OrderService) *OrderHandler {
 	return &OrderHandler{orderService: orderService}
 }
 
-type CreateOrderReq struct {
-	Items []CreateOrderItemReq `json:"items"`
-}
-
-type CreateOrderItemReq struct {
-	ProductID int64 `json:"product_id"`
-	Quantity  int32 `json:"quantity"`
-}
-
 func (h *OrderHandler) CreateOrder(w http.ResponseWriter, r *http.Request) {
 	userId, ok := middleware.UserIdFromContext(r.Context())
 	if !ok {
@@ -33,7 +25,7 @@ func (h *OrderHandler) CreateOrder(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var req CreateOrderReq
+	var req dto.CreateOrderReq
 
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		helper.WriteError(w, http.StatusInternalServerError, err.Error())

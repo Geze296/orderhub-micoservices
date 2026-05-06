@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/Geze296/orderhub/api-service/internal/http/dto"
 	"github.com/Geze296/orderhub/api-service/internal/http/helper"
 	"github.com/Geze296/orderhub/api-service/internal/http/middleware"
 	"github.com/Geze296/orderhub/api-service/internal/service"
@@ -21,20 +22,11 @@ func NewAuthHandler(authService *service.AuthService) *AuthHandler{
 	}
 }
 
-type RegisterRequest struct {
-	Name string `json:"name"`
-	Email string `json:"email"`
-	Password string `json:"password"`
-}
 
-type LoginRequest struct {
-	Email string `json:"email"`
-	Password string `json:"password"`
-}
 
 func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 	
-	var req RegisterRequest
+	var req dto.RegisterRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		helper.WriteError(w, http.StatusInternalServerError, "Error while Decoding the request")
 	}
@@ -64,7 +56,7 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
-	var req LoginRequest
+	var req dto.LoginRequest
 
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		helper.WriteError(w, http.StatusBadRequest, "Unable to process the request")
